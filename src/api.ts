@@ -51,6 +51,7 @@ export async function requestApi<T>(
   auth: TwitterAuth,
   method: 'GET' | 'POST' = 'GET',
   platform: PlatformExtensions = new Platform(),
+  body: any = null,
 ): Promise<RequestApiResult<T>> {
   const headers = new Headers();
   await auth.installTo(headers, url);
@@ -63,6 +64,7 @@ export async function requestApi<T>(
         method,
         headers,
         credentials: 'include',
+        body: body ? JSON.stringify(body) : undefined,
       });
     } catch (err) {
       if (!(err instanceof Error)) {

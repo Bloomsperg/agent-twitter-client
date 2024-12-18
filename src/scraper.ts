@@ -71,6 +71,7 @@ import {
   sendDirectMessage,
   SendDirectMessageResponse,
 } from './messages';
+import { createGrokRequest } from './grok';
 
 const twUrl = 'https://twitter.com';
 const UserTweetsUrl =
@@ -474,6 +475,10 @@ export class Scraper {
       replyToTweetId,
       mediaData,
     );
+  }
+
+  async sendGrok(text: string) {
+    return await createGrokRequest(text, this.auth);
   }
 
   /**
