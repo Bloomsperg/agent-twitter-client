@@ -37,7 +37,7 @@ export async function createGrokRequest(text: string, auth: TwitterAuth) {
   );
 
   const data = await response.json();
-  const conversationId = data.data.createGrokConversation.conversationId;
+  const conversationId = data.data.create_grok_conversation.conversation_id;
 
   const grokVariables = {
     responses: [
@@ -64,18 +64,30 @@ export async function createGrokRequest(text: string, auth: TwitterAuth) {
     },
   };
 
+  const streamHeaders = new Headers({
+    authorization: `Bearer ${(auth as any).bearerToken}`,
+    cookie: await auth.cookieJar().getCookieString(onboardingTaskUrl),
+    'content-type': 'text/plain;charset=UTF-8',
+    'User-Agent':
+      'Mozilla/5.0 (Linux; Android 11; Nokia G20) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.88 Mobile Safari/537.36',
+    'x-guest-token': (auth as any).guestToken,
+    'x-twitter-auth-type': 'OAuth2Client',
+    'x-twitter-active-user': 'yes',
+    'x-twitter-client-language': 'en',
+    'x-csrf-token': xCsrfToken?.value as string,
+  });
+
   const streamResponse = await fetch(
     'https://api.x.com/2/grok/add_response.json',
     {
-      headers,
-      body: JSON.stringify({
-        grokVariables,
-      }),
+      headers: streamHeaders,
+      body: JSON.stringify(grokVariables),
       method: 'POST',
     },
   );
 
   let buffer = '';
+  let message = '';
   if (streamResponse.body) {
     const reader = streamResponse.body.getReader();
     const decoder = new TextDecoder();
@@ -91,7 +103,11 @@ export async function createGrokRequest(text: string, auth: TwitterAuth) {
         if (chunk) {
           try {
             const json = JSON.parse(chunk);
-            console.log(json);
+            if (json.result) {
+              if (json.result.message) {
+                message += json.result.message;
+              }
+            }
           } catch (e) {
             console.error('Failed to parse JSON chunk:', chunk, e);
           }
@@ -101,5 +117,5 @@ export async function createGrokRequest(text: string, auth: TwitterAuth) {
     }
   }
 
-  return buffer;
+  return message;
 }
